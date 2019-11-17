@@ -5,6 +5,7 @@ import tensorflow as tf
 import tensorflow.keras as ks
 from tensorflow.keras.layers import Layer,Dense,Input, Embedding, LSTM,Bidirectional,Dropout,Activation,Convolution1D, Flatten, MaxPool1D, GlobalAveragePooling1D,BatchNormalization
 from tensorflow.keras.models import Model
+from keras import backend as K
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -64,14 +65,32 @@ class Fm_layer(Layer):
 
 #BiInteraction_layer
 class BiInteraction_layer(Layer):
-     def __init__(self, hidden_units, activation='relu', l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
+    def __init__(self, hidden_units, activation='relu', l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
         self.hidden_units = hidden_units
         self.activation = activation
         self.dropout_rate = dropout_rate
         self.seed = seed
         self.l2_reg = l2_reg
         self.use_bn = use_bn
-        super(Fm_layer, self).__init__(**kwargs)
+        super(BiInteraction_layer, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        if len(input_shape) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(input_shape)))
+
+        super(BiInteraction_layer, self).build(
+            input_shape)  # Be sure to call this somewhere!
+
+
+    def call(self, x, training = False):
+        if K.nidm(x) != 3:
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions" % (K.ndim(x)))
+        square_of_sum = tf.square(tf.reduce_sum(x, axis = 1,keepdims = True))
+        sum_of_suqare = tf.reduce_sum(tf.multiply(x, x), axis = 1,keepdims = True)
+        return 0.5 * (square_of_sum - sum_of_suqare)
+        
 
 #LocalActivationUnit_layer
 class LocalActivationUnit_layer(Layer):
