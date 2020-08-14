@@ -1,2 +1,2 @@
-# papers_code
-推荐系统论文实现
+# JimmyCtr
+一个简单的深度推荐系统框架
