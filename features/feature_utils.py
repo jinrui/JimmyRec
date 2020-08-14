@@ -56,11 +56,11 @@ name=click_lisan;class=bucketized_column;slot_id=5;source_column=click;boundries
 name=sex_onehot;class=indicator_column;slot_id=6;categorical_column=sex
 name=second_category_emb;calss=embedding_column;slot_id=7;categorical_column=second_category;dimension=100
 name=age_sex;calss=crossed_columns;slot_id=8;keys=age,sex;hash_bucket_size=6000
-
-feature_slots:
-[1,2,3,4,5,6,7,8] ,feature_columns按照此格式返回
+name=feature_columns;keys=age,sex,click,second_category,click_lisan,sex_onehot,second_category_emb,age_sex
+name是特征列名字(不能重复)，class是特征处理的类，slot_id是输入的特征slot_id,second_category_emb这种slot_id会忽略。
+按照feature_columns关键字对应的格式返回,
 """
-def  df_to_featurecolumn(df, feature_mapping, feature_slots):
+def  df_to_featurecolumn(df, feature_mapping,):
     pass
 
 
