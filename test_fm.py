@@ -15,6 +15,21 @@ import pandas as pd
 import os
 from core_layers import Fm_layer,DNN_layers
 
+def  test_DeepFm():
+    filetxt = np.loadtxt('data/ml-100k/sample_fea.txt', delimiter='\t',skiprows=1)
+    train_data, test_data = cv.train_test_split(filetxt, test_size=0.3)
+    train_data_y = train_data[:,0]
+    train_data_x = train_data[:,1:]
+    test_data_y = test_data[:,0]
+    test_data_x = test_data[:,1:]
+    print(train_data_x)
+    train_data_x =  preprocessing.StandardScaler().fit_transform(train_data_x)
+    test_data_x = preprocessing.StandardScaler().fit_transform(test_data_x)
+    train_data_y = np.where(train_data_y >3,1.0,0.0)
+    feature_columns = []
+    feature_columns.append(tf.feature_column.numeric_column('movie_fea'))
+    deepfm = DeepFm(feature_columns,dnn_hidden_units=[32,1]],feat_num=55)
+
 
 filetxt = np.loadtxt('data/ml-100k/sample_fea.txt', delimiter='\t',skiprows=1)
 train_data, test_data = cv.train_test_split(filetxt, test_size=0.3)
