@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-  
 
 import tensorflow as tf 
-import tensorflow.keras as ks
+#import tensorflow.keras as ks
 from tensorflow.keras.layers import Layer,Dense,Input, Embedding, LSTM,Bidirectional,Dropout,Activation,Convolution1D, Flatten, MaxPool1D, GlobalAveragePooling1D,BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras import backend as K
@@ -55,13 +55,70 @@ name=second_category;class=categorical_column_with_vocabulary_file;slot_id=4;voc
 name=click_lisan;class=bucketized_column;slot_id=5;source_column=click;boundries=0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0
 name=sex_onehot;class=indicator_column;slot_id=6;categorical_column=sex
 name=second_category_emb;calss=embedding_column;slot_id=7;categorical_column=second_category;dimension=100
-name=age_sex;calss=crossed_columns;slot_id=8;keys=age,sex;hash_bucket_size=6000
-name=feature_columns;keys=age,sex,click,second_category,click_lisan,sex_onehot,second_category_emb,age_sex
+name=age_sex;calss=crossed_column;slot_id=8;keys=age,sex;hash_bucket_size=6000
+name=feature_columns;class=;keys=age,sex,click,second_category,click_lisan,sex_onehot,second_category_emb,age_sex
 name是特征列名字(不能重复)，class是特征处理的类，slot_id是输入的特征slot_id,second_category_emb这种slot_id会忽略。
 按照feature_columns关键字对应的格式返回,
 """
-def  df_to_featurecolumn(df, feature_mapping,):
-    pass
+def gen_featuremaps(feature_mapping):
+    fea_map = {}
+    for line in open(feature_mapping):
+        lines = line.strip().split(';')
+        tmp_map = {}
+        for ll in lines:
+            ls = ll.spit('=')
+            tmp_map[ls[0].strip()] = ls[1].strip()
+        fea_map[tmp_map['name']] = tmp_map
+    return fea_map
+
+
+def  make_featurecolumn(feature_mapping):
+    fea_map = gen_featuremaps(feature_mapping)
+    feature_column_map = fea_map['feature_columns']
+    column_keys = feature_column_map['keys'].split(',')
+    feature_columns = []
+    feature_columns_map = {}
+    for name in column_keys:
+        fea_col = fea_map[name]
+        fea_class = fea_col['class']
+        if fea_class == 'categorical_column_with_hash_bucket':
+            col = tf.feature_column.categorical_column_with_hash_bucket(fea_col['slot_id'], \
+                hash_bucket_size = int(fea_col['hash_bucket_size']))
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+        if fea_class == 'categorical_column_with_vocabulary_list':
+            col = tf.feature_column.categorical_column_with_vocabulary_list(fea_col['slot_id'], \
+                vocabulary_list = [fea.strip() for fea in fea_col['vocabulary_list'].split(',')])
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+        if fea_class == 'categorical_column_with_vocabulary_file':
+            col = tf.feature_column.categorical_column_with_vocabulary_file(fea_col['slot_id'], \
+                vocabulary_file = fea_col['vocabulary_file'])
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+        if fea_class == 'bucketized_column':
+            col = tf.feature_column.bucketized_column(feature_columns_map[fea_col['source_column']], \
+                boundries = [float(fea) for fea in fea_col['boundries'].split(',')])
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+        if fea_class == 'indicator_column':
+            col = tf.feature_column.indicator_column(categorical_column = feature_columns_map[fea_col['categorical_column']])
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+        if fea_class == 'embedding_column':
+            col = tf.feature_column.embedding_column(categorical_column = feature_columns_map[fea_col['categorical_column']], \
+                dimension = int(fea_col['dimension']))
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+        if fea_class == 'crossed_column':
+            key_cloumns = fea_col['keys'].split(',')
+            col = tf.feature_column.crossed_column([feature_columns_map[key] for key in key_cloumns], \
+                hash_bucket_size = int(fea_col['hash_bucket_size']))
+            feature_columns.append(col)
+            feature_columns_map[name] = col
+    return feature_columns
+
+
 
 
 
@@ -70,3 +127,4 @@ def  df_to_featurecolumn(df, feature_mapping,):
     print(x_train.todense(),y_train)
 df = load_jimmysvm("../data/test_libfm.txt")
 print(df.head())
+feature_columns = make_featurecolumn('../data/test_featuremap')
