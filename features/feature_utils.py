@@ -1,19 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-  
 
-import tensorflow as tf 
+#import tensorflow as tf 
 #import tensorflow.keras as ks
-from tensorflow.keras.layers import Layer,Dense,Input, Embedding, LSTM,Bidirectional,Dropout,Activation,Convolution1D, Flatten, MaxPool1D, GlobalAveragePooling1D,BatchNormalization
-from tensorflow.keras.models import Model
-from tensorflow.keras import backend as K
 
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingRegressor
 import pandas as pd 
 import os
 import re
-
+import time
 """
 加载特征格式为 label slot_id1:fea_val slot_id2:fea_val slot_id3:fea_val 
 slot_id尽量为整数，对应一个特征名，fea_val为特征值，根据自身需要可以是float,string等
@@ -49,6 +44,7 @@ def load_jimmysvm(file_name):
 根据特征指定的处理方案，生成对应的feature_column
 feature_mapping格式类似于:
 name=age;class=categorical_column_with_hash_bucket;slot_id=1;hash_bucket_size=1000
+name=age1;class=categorical_column_with_identity;slot_id=1;num_buckets=1000
 name=sex;class=categorical_column_with_vocabulary_list;slot_id=2;vocabulary_list=man,woman
 name=click;class=numeric_column;slot_id=3
 name=second_category;class=categorical_column_with_vocabulary_file;slot_id=4;vocabulary_file=../data/feature_map.txt;vocabulary_size=1000
@@ -86,6 +82,11 @@ def  make_featurecolumn(feature_mapping):
                 hash_bucket_size = int(fea_col['hash_bucket_size']))
             feature_columns.append(col)
             feature_columns_map[name] = col
+        if fea_class == 'categorical_column_with_identity':
+            col = tf.feature_column.categorical_column_with_identity(fea_col['slot_id'], \
+                hash_bucket_size = int(fea_col['num_buckets']))
+            feature_columns.append(col)
+            feature_columns_map[name] = col
         if fea_class == 'categorical_column_with_vocabulary_list':
             col = tf.feature_column.categorical_column_with_vocabulary_list(fea_col['slot_id'], \
                 vocabulary_list = [fea.strip() for fea in fea_col['vocabulary_list'].split(',')])
@@ -118,13 +119,40 @@ def  make_featurecolumn(feature_mapping):
             feature_columns_map[name] = col
     return feature_columns
 
+def gen_movielens_feas(dir_name):
+    #读取用户对item打分到pd
+    user_item_pd = pd.read_csv(dir_name + '/u.data',sep='\t',names=['user_id', 'item_id', 'rating', 'timestamp'])
+    #读取用户特征到pd
+    user_feature_pd = pd.read_csv(dir_name + '/u.user',sep='\|',names=['user_id', 'age', 'gender', 'occupation','zipcode'])
+    #读取item特征到pd
+    item_feature_pd = pd.read_csv(dir_name + '/u.item',sep='\|',names=['item_id', 'mvtitle', 'releasedate', 'vdreleasedate','imdburl','unknow','action','adventure',
+                                                                        'animation','children','comedy','crime','Documentary','Drama',
+                                                                        'Fantasy','film_noir','horror','musical','mystery','romance','sci_fi','thriller','war','western'])
+    user_item_pd = pd.merge(user_item_pd, user_feature_pd, on='user_id')
+    user_item_pd = pd.merge(user_item_pd, item_feature_pd, on='item_id')
+    def  string_toTimestamp(st):
+        if type(st) != type('a') :
+            return 0
+        st = st.replace('Jan','1').replace('Feb','2').replace('Mar','3').replace('Apr','4').replace('May','5').replace('Jun','6').replace('Jul','7').replace('Aug','8').replace('Sep','9').replace('Oct','10').replace('Nov','11').replace('Dec','12')
+
+        result =   time.mktime(time.strptime(st, "%d-%m-%Y"))
+        return max(0, result)
+    def handle_mvtitle(title):
+        titles = [t.strip(' ()\'') for t in title.split(' ')]
+        return titles
+
+    user_item_pd['releasedate']=user_item_pd['releasedate'].apply(string_toTimestamp)
+    user_item_pd['mvtitle']=user_item_pd['mvtitle'].apply(handle_mvtitle)
+    #print(user_item_pd.head())
+    #print(user_item_pd['unknow'].max())
+    return user_item_pd
 
 
 
 
 
-    x_train,y_train=ds.load_svmlight_file(file_name)
-    print(x_train.todense(),y_train)
-df = load_jimmysvm("../data/test_libfm.txt")
-print(df.head())
-feature_columns = make_featurecolumn('../data/test_featuremap')
+
+#df = load_jimmysvm("../data/test_libfm.txt")
+#print(df.head())
+#feature_columns = make_featurecolumn('../data/test_featuremap')
+gen_movielens_feas("../data/ml-100k")
