@@ -1,0 +1,9 @@
+name=age;class=categorical_column_with_hash_bucket;slot_id=1;hash_bucket_size=1000
+name=sex;class=categorical_column_with_vocabulary_list;slot_id=2;vocabulary_list=man,woman
+name=click;class=numeric_column;slot_id=3
+name=second_category;class=categorical_column_with_vocabulary_file;slot_id=4;vocabulary_file=../data/feature_map.txt;vocabulary_size=1000
+name=click_lisan;class=bucketized_column;slot_id=5;source_column=click;boundries=0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0
+name=sex_onehot;class=indicator_column;slot_id=6;categorical_column=sex
+name=second_category_emb;calss=embedding_column;slot_id=7;categorical_column=second_category;dimension=100
+name=age_sex;calss=crossed_column;slot_id=8;keys=age,sex;hash_bucket_size=6000
+name=feature_columns;class=;keys=age,sex,click,second_category,click_lisan,sex_onehot,second_category_emb,age_sex

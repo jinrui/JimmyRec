@@ -15,7 +15,7 @@ import os
 
 #改进版DeepFm，和原来的有所不同，更简洁，主要是为了适应一个slot多个值的问题
 #比如：用户最近一周听过的歌曲这个特征，是个变成数组，原模型不能很好的支持
-class DeepFm(Model):
+class DeepFm_old(Model):
     def __init__(self, feature_columns,dnn_hidden_units=None,feat_num=0,
     dnn_activation_fn=tf.nn.relu,dnn_dropout=None,output_activation = tf.nn.sigmoid,
     n_classes=1,batch_norm=False,fm_len=10, **kwargs):
@@ -56,3 +56,46 @@ class DeepFm(Model):
         out = self.output_layer(deep_out)
         return   out#th fm part has error ,make auc 0.5
 
+class DeepFm(Model):
+    def __init__(self, fea_ids,dnn_hidden_units=None,feat_num=0,
+    dnn_activation_fn=tf.nn.relu,dnn_dropout=None,output_activation = tf.nn.sigmoid,
+    n_classes=1,batch_norm=False,fm_len=10, **kwargs):
+        super().__init__(**kwargs)
+        self.fea_ids = fea_ids
+        self.dnn_hidden_units = dnn_hidden_units
+        self.dnn_activation_fn = dnn_activation_fn
+        self.dnn_dropout = dnn_dropout
+        self.n_classes = n_classes
+        self.batch_norm = batch_norm
+        self.fm_len = fm_len
+        self.output_activation=output_activation
+        self.feat_num=feat_num
+        #第一层 embedding_layer
+        self.weight_vec = self.add_weight(name='fm_weight',  shape=(self.feat_num, 1), initializer='glorot_uniform',trainable=True)
+        self.bias = self.add_weight(name='fm_bias',  shape=(1,), initializer='glorot_uniform',trainable=True)
+        self.fea_vec = self.add_weight(name='fm_vec',  shape=(self.feat_num, self.fm_len), initializer=ks.initializers.RandomUniform(minval=-0.05, maxval=0.05, seed=1024)
+,trainable=True)
+        self.blocks = ks.models.Sequential(name='dynamic-blocks')
+        for hit in dnn_hidden_units:
+            self.blocks.add(Dense(hit))
+            self.blocks.add(Activation(dnn_activation_fn))
+        self.output_layer = Dense(self.n_classes, Activation(self.output_activation))
+
+
+    def call(self, x, training = None):
+        #lr
+        lr = tf.matmul(x, tf.nn.embedding_lookup(self.weight_vec, self.fea_ids)) + self.bias
+        #fm
+        feat_embeddings = tf.nn.embedding_lookup(self.fea_vec, self.fea_ids) #feat_id_num * fm_len
+        feat_value = tf.reshape(x,[None, 1])
+        feat_embeddings_vals = feat_embeddings * feat_value
+        square_of_sum = tf.square(K.dot(x,  self.feat_embeddings_vals))
+        sum_of_suqare = K.dot(K.square(x), K.square(feat_embeddings_vals))
+        second_part = 0.5 * (square_of_sum - sum_of_suqare)
+        new_weight = tf.reshape(feat_embeddings_vals, shape=[1, \
+                        None])
+        dnn_part = self.blocks(new_weight)
+        deep_out    = tf.concat([lr, second_part, \
+                         dnn_part], axis=1)
+        out = self.output_layer(deep_out)
+        return   out#th fm part has error ,make auc 0.5
