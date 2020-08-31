@@ -73,54 +73,47 @@ def gen_featuremaps(feature_mapping):
 
 
 def  make_featurecolumn(feature_conf,feature_mapping):
-    fea_list = gen_featuremaps(feature_mapping)
+    fea_list = gen_featuremaps(feature_conf)
     feature_columns = []
     feature_columns_map = {}
     for fea_col in fea_list:
+        print(fea_col)
         fea_class = fea_col['class']
+        name = fea_col['name']
+
         if fea_class == 'categorical_column_with_hash_bucket':
-            col = tf.feature_column.categorical_column_with_hash_bucket(fea_col['slot_id'], \
+            col = tf.feature_column.categorical_column_with_hash_bucket(name, \
                 hash_bucket_size = int(fea_col['hash_bucket_size']))
-            feature_columns.append(col)
-            feature_columns_map[name] = col
+        if fea_class == 'numeric_column':
+            col = tf.feature_column.numeric_column(name)
+            
         if fea_class == 'categorical_column_with_identity':
-            col = tf.feature_column.categorical_column_with_identity(fea_col['slot_id'], \
+            col = tf.feature_column.categorical_column_with_identity(name, \
                 hash_bucket_size = int(fea_col['num_buckets']))
-            feature_columns.append(col)
-            feature_columns_map[name] = col
         if fea_class == 'categorical_column_with_vocabulary_list':
-            col = tf.feature_column.categorical_column_with_vocabulary_list(fea_col['slot_id'], \
+            col = tf.feature_column.categorical_column_with_vocabulary_list(name, \
                 vocabulary_list = [fea.strip() for fea in fea_col['vocabulary_list'].split(',')])
-            feature_columns.append(col)
-            feature_columns_map[name] = col
         if fea_class == 'categorical_column_with_vocabulary_file':
-            col = tf.feature_column.categorical_column_with_vocabulary_file(fea_col['slot_id'], \
-                vocabulary_file = fea_col['vocabulary_file'])
-            feature_columns.append(col)
-            feature_columns_map[name] = col
+            col = tf.feature_column.categorical_column_with_vocabulary_file(name, \
+                vocabulary_file = fea_col['vocabulary_file'], vocabulary_size = fea_col['vocabulary_size'])
         if fea_class == 'bucketized_column':
             col = tf.feature_column.bucketized_column(feature_columns_map[fea_col['source_column']], \
                 boundries = [float(fea) for fea in fea_col['boundries'].split(',')])
-            feature_columns.append(col)
-            feature_columns_map[name] = col
         if fea_class == 'indicator_column':
             col = tf.feature_column.indicator_column(categorical_column = feature_columns_map[fea_col['categorical_column']])
-            feature_columns.append(col)
-            feature_columns_map[name] = col
         if fea_class == 'embedding_column':
             col = tf.feature_column.embedding_column(categorical_column = feature_columns_map[fea_col['categorical_column']], \
                 dimension = int(fea_col['dimension']))
-            feature_columns.append(col)
-            feature_columns_map[name] = col
         if fea_class == 'crossed_column':
             key_cloumns = fea_col['keys'].split(',')
             col = tf.feature_column.crossed_column([feature_columns_map[key] for key in key_cloumns], \
                 hash_bucket_size = int(fea_col['hash_bucket_size']))
-            feature_columns.append(col)
-            feature_columns_map[name] = col
+        feature_columns.append(col)
+        feature_columns_map[name] = col
     result = []
     for line in open(feature_mapping):
         lines = line.strip().split(',')
+        print(lines, feature_columns_map)
         result.append([feature_columns_map[ll] for ll in lines])
     return result
 
@@ -160,6 +153,6 @@ def gen_movielens_feas(dir_name):
 
 #df = load_jimmysvm("../data/test_libfm.txt")
 #print(df.head())
-feature_columns = make_featurecolumn('../conf/deepfm.conf')
+feature_columns = make_featurecolumn('../conf/deepfm.conf', '../conf/deepfm.fc')
 print(feature_columns)
-#gen_movielens_feas("../data/ml-100k")
+gen_movielens_feas("../data/ml-100k")
