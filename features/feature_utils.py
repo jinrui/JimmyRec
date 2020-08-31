@@ -5,10 +5,12 @@
 #import tensorflow.keras as ks
 
 import numpy as np
+import tensorflow as tf 
 import pandas as pd 
 import os
 import re
 import time
+from sklearn.preprocessing import MinMaxScaler
 """
 加载特征格式为 label slot_id1:fea_val slot_id2:fea_val slot_id3:fea_val 
 slot_id尽量为整数，对应一个特征名，fea_val为特征值，根据自身需要可以是float,string等
@@ -57,25 +59,24 @@ name是特征列名字(不能重复)，class是特征处理的类，slot_id是�
 按照feature_columns关键字对应的格式返回,
 """
 def gen_featuremaps(feature_mapping):
-    fea_map = {}
+    fea_list = []
     for line in open(feature_mapping):
+        if line.strip() == '' or line.strip().startswith('#'):
+            continue
         lines = line.strip().split(';')
         tmp_map = {}
         for ll in lines:
-            ls = ll.spit('=')
+            ls = ll.split('=')
             tmp_map[ls[0].strip()] = ls[1].strip()
-        fea_map[tmp_map['name']] = tmp_map
-    return fea_map
+        fea_list.append(tmp_map)
+    return fea_list
 
 
-def  make_featurecolumn(feature_mapping):
-    fea_map = gen_featuremaps(feature_mapping)
-    feature_column_map = fea_map['feature_columns']
-    column_keys = feature_column_map['keys'].split(',')
+def  make_featurecolumn(feature_conf,feature_mapping):
+    fea_list = gen_featuremaps(feature_mapping)
     feature_columns = []
     feature_columns_map = {}
-    for name in column_keys:
-        fea_col = fea_map[name]
+    for fea_col in fea_list:
         fea_class = fea_col['class']
         if fea_class == 'categorical_column_with_hash_bucket':
             col = tf.feature_column.categorical_column_with_hash_bucket(fea_col['slot_id'], \
@@ -117,7 +118,11 @@ def  make_featurecolumn(feature_mapping):
                 hash_bucket_size = int(fea_col['hash_bucket_size']))
             feature_columns.append(col)
             feature_columns_map[name] = col
-    return feature_columns
+    result = []
+    for line in open(feature_mapping):
+        lines = line.strip().split(',')
+        result.append([feature_columns_map[ll] for ll in lines])
+    return result
 
 def gen_movielens_feas(dir_name):
     #读取用户对item打分到pd
@@ -143,8 +148,9 @@ def gen_movielens_feas(dir_name):
 
     user_item_pd['releasedate']=user_item_pd['releasedate'].apply(string_toTimestamp)
     user_item_pd['mvtitle']=user_item_pd['mvtitle'].apply(handle_mvtitle)
-    #print(user_item_pd.head())
-    #print(user_item_pd['unknow'].max())
+    user_item_pd[['timestamp', 'age', 'releasedate']] = MinMaxScaler().fit_transform(user_item_pd[['timestamp', 'age', 'releasedate']])
+    print(user_item_pd.head())
+    print(user_item_pd['zipcode'])
     return user_item_pd
 
 
@@ -154,5 +160,6 @@ def gen_movielens_feas(dir_name):
 
 #df = load_jimmysvm("../data/test_libfm.txt")
 #print(df.head())
-#feature_columns = make_featurecolumn('../data/test_featuremap')
-gen_movielens_feas("../data/ml-100k")
+feature_columns = make_featurecolumn('../conf/deepfm.conf')
+print(feature_columns)
+#gen_movielens_feas("../data/ml-100k")
