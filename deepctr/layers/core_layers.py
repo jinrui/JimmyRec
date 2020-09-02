@@ -62,13 +62,14 @@ class Fm(Layer):
         super(Fm, self).build(input_shape)  # Be sure to call this somewhere!
 
     def call(self, x, training = None):
+        print(x.shape)
         if K.ndim(x) != 3:
             raise ValueError(
-                "Unexpected inputs dimensions %d, expect to be 3 dimensions"
-                % (K.ndim(inputs)))
-        square_of_sum = tf.square(tf.reduce_sum(x, axis = 1, keep_dims=True))
-        sum_of_suqare = tf.reduce_sum(x * x, axis = 1, keep_dims=True)
-        return 0.5 * tf.reduce_sum((square_of_sum - sum_of_suqare), axis = 2, keep_dims=False) 
+                "Unexpected inputs dimensions %d, expect to be 2 dimensions"
+                % (K.ndim(x)))
+        square_of_sum = tf.square(tf.reduce_sum(x, axis = 1, keepdims=True))
+        sum_of_suqare = tf.reduce_sum(x * x, axis = 1, keepdims=True)
+        return 0.5 * tf.reduce_sum((square_of_sum - sum_of_suqare), axis = 2, keepdims=False) 
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0], 1)
