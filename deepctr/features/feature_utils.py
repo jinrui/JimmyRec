@@ -73,6 +73,7 @@ def gen_featuremaps(feature_mapping):
 
 
 def  make_featurecolumn(feature_conf,feature_mapping):
+    print('hehe')
     fea_list = gen_featuremaps(feature_conf)
     feature_columns = []
     feature_columns_map = {}

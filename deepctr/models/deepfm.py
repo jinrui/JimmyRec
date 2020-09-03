@@ -58,6 +58,9 @@ def DeepFm_v2(dnn_feature_columns,line_feature_columns,dnn_hidden_units=None,
             feature_columns=line_feature_columns, name="line_input_layer")
     dnn_inputs_list = build_input_layers(dnn_feature_columns + line_feature_columns)
     line_inputs_list = build_input_layers(line_feature_columns)
+    
+
+    print('hahahahaha',line_input_layer)
     lr_logit = Dense(1)(line_input_layer(line_inputs_list)) #lr
     #fm_logit = self.fm_layer(dnn_part) #fm
     blocks = ks.models.Sequential(name='dynamic-blocks')
@@ -69,5 +72,6 @@ def DeepFm_v2(dnn_feature_columns,line_feature_columns,dnn_hidden_units=None,
     deep_logit = blocks(dnn_input_layer(dnn_inputs_list)) #dnn
     all_concat = tf.concat([lr_logit, deep_logit], axis=1)
     output = Dense(n_classes, Activation(output_activation))(all_concat)
+    print(dnn_inputs_list.values())
     model = tf.keras.models.Model(inputs=dnn_inputs_list.values(), outputs=output)
     return model
