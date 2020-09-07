@@ -19,11 +19,11 @@ def build_input_layers(feature_columns):
     input_list = {}
     for fc in feature_columns:
         if isinstance(fc, feature_column_v2.EmbeddingColumn): 
-            input_list[fc.name] = Input(
-                shape=(fc.dimension,), name=fc.name, dtype=fc.dtype)
+            input_list[fc.categorical_column.name] = Input(
+                shape=(1,), name=fc.categorical_column.name, dtype=fc.categorical_column.dtype)
         if isinstance(fc, feature_column_v2.IndicatorColumn): 
-            input_list[fc.name] = Input(
-                shape=(fc.variable_shape[-1],), name=fc.name, dtype=fc.dtype)
+            input_list[fc.categorical_column.name] = Input(
+                shape=(1,), name=fc.categorical_column.name, dtype=fc.categorical_column.dtype)
         if isinstance(fc, feature_column_v2.NumericColumn): 
             input_list[fc.name] = Input(
                 shape=(fc.shape[0],), name=fc.name, dtype=fc.dtype)

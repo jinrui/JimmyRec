@@ -25,12 +25,12 @@ dataset = tf.data.Dataset.from_tensor_slices((dict(Features), labels))
 # x_train_it, y_train_it = train_it.get_next()
 print(feature_columns)
 deepfm = DeepFm([], feature_columns[1], [64,32,8])
-print('gagagaga', feature_columns[1])
-deepfm_v2 = DeepFm_v2([], feature_columns[1], [64,32,8])
+deepfm_v2 = DeepFm_v2( feature_columns[0], feature_columns[1], [64,32,8])
 deepfm_v2.compile("adam", "mse", metrics=['mse'], )
 #model_input = {name: data[name] for name in sparse_features}  #
+print(Features['user_id'])
 history = deepfm_v2.fit(dict(Features), labels.values,
-                    batch_size=256, epochs=10, verbose=2, validation_split=0.2, )
+                    batch_size=128, epochs=100, verbose=2, validation_split=0.2, )
 # deepfm.build(input_shape=(None, 28, 28, 1))
 # deepfm.summary()
 # deepfm.compile(optimizer='adam',

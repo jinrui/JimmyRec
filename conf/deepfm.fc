@@ -1,2 +1,2 @@
-timestamp,age,gender_onehot,releasedate
+user_id_emb,item_id_emb,zipcode_emb
 timestamp,age,releasedate

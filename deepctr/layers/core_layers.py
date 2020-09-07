@@ -65,7 +65,7 @@ class Fm(Layer):
         print(x.shape)
         if K.ndim(x) != 3:
             raise ValueError(
-                "Unexpected inputs dimensions %d, expect to be 2 dimensions"
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions"
                 % (K.ndim(x)))
         square_of_sum = tf.square(tf.reduce_sum(x, axis = 1, keepdims=True))
         sum_of_suqare = tf.reduce_sum(x * x, axis = 1, keepdims=True)
