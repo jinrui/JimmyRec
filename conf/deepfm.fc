@@ -1,2 +1,2 @@
 user_id_emb,item_id_emb,zipcode_emb
-timestamp,age,releasedate
+timestamp

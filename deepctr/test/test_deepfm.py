@@ -13,27 +13,14 @@ from sklearn.ensemble import GradientBoostingRegressor
 import pandas as pd 
 import os
 from deepctr.features.feature_utils import gen_movielens_feas,make_featurecolumn
-from deepctr.models.deepfm import DeepFm, DeepFm_v2
-print('gagagaga')
+from deepctr.models.deepfm import DeepFm
 feature_columns = make_featurecolumn('conf/deepfm.conf', 'conf/deepfm.fc')
 data = gen_movielens_feas("data/ml-100k")
 Features,labels = data,data.pop('rating')
-print(Features.columns)
-#dataset = tf.data.Dataset.from_tensor_slices((dict(Features[['age', 'user_id', 'item_id', 'gender', 'occupation','timestamp','zipcode','releasedate']]), labels))
-dataset = tf.data.Dataset.from_tensor_slices((dict(Features), labels))
-# train_it = dataset.make_one_shot_iterator()
-# x_train_it, y_train_it = train_it.get_next()
-print(feature_columns)
-deepfm = DeepFm([], feature_columns[1], [64,32,8])
-deepfm_v2 = DeepFm_v2( feature_columns[0], feature_columns[1], [64,32,8])
-deepfm_v2.compile("adam", "mse", metrics=['mse'], )
-#model_input = {name: data[name] for name in sparse_features}  #
-print(Features['user_id'])
-history = deepfm_v2.fit(dict(Features), labels.values,
-                    batch_size=128, epochs=100, verbose=2, validation_split=0.2, )
-# deepfm.build(input_shape=(None, 28, 28, 1))
-# deepfm.summary()
-# deepfm.compile(optimizer='adam',
-#               loss='mse')
-# print(dataset)
-# deepfm.fit(dataset, epochs=100,verbose=1)
+deepfm = DeepFm( feature_columns[0], feature_columns[1], [64,32,8], output_activation = None)
+deepfm.compile(optimizer=tf.keras.optimizers.Adam(0.0001), loss="mse", metrics=['mse'], )
+history = deepfm.fit(dict(Features), labels.values,
+                     batch_size=128, epochs=10, verbose=2, validation_split=0.2, )
+deepfm.summary()
+print(deepfm.predict(dict(Features)), labels)
+
