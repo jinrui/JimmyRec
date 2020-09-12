@@ -71,7 +71,7 @@ def gen_featuremaps(feature_mapping):
         fea_list.append(tmp_map)
     return fea_list
 
-
+#针对多值特征额外增加一个参数
 def  make_featurecolumn(feature_conf,feature_mapping):
     fea_list = gen_featuremaps(feature_conf)
     feature_columns = []
