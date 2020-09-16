@@ -29,18 +29,12 @@ class embeedding_columns():
         if self.embeddings_initializer is None:
             self.embeddings_initializer  = RandomNormal(mean=0.0, stddev=0.0001, seed=1991)
 
-class onehot_columns():
-    def __init__(name,vocabulary_list = None,vocabulary_file = None,use_hash = False,dtype=tf.float32 ):
-        self.name = name
-        self.vocabulary_list = vocabulary_list
-        self.vocabulary_file = vocabulary_file
-        self.dtype = dtype
-
 class numeric_columns():
-    def __init__(name, num_len = 1, dtype=tf.float32):
+    def __init__(name, num_len = 1, dtype=tf.float32, normfun = None):
         self.name = name
         self.num_len = num_len
         self.dtype = dtype
+        self.normfun = None
 
 def build_feature_columns(feature_columns):
     input_dict = {}
@@ -48,16 +42,14 @@ def build_feature_columns(feature_columns):
         if isinstance(fc, embeedding_columns): 
             input_dict[fc.name] = Input(
                 shape=(fc.max_len,), name=fc.name, dtype=fc.dtype)
-        if isinstance(fc, onehot_columns): 
-            input_dict[fc.name] = Input(
-                shape=(1,), name=fc.name, dtype=fc.dtype)
         if isinstance(fc, numeric_columns): 
             input_dict[fc.name] = Input(
                 shape=(fc.num_len,), name=fc.name, dtype=fc.dtype)
     return input_dict
 
 def dict_from_feature_columns(features, feature_columns):
-    fea_dict = {}
+   dnn_ fea_dict = {}
+   num_fea_dict = {}
     for fc in feature_columns:
         if isinstance(fc, embeedding_columns): 
             emb = Embedding(fc.vocabulary_size, fc.embedding_dim, \
@@ -69,12 +61,12 @@ def dict_from_feature_columns(features, feature_columns):
             else:
                 idx = features[fc.name]
             fea_dict[fc.name] = tf.nn.embedding_lookup(emb, idx)
-        elif fc in onehot_columns:
-            pass
-        else:
-            pass
+        elif isinstance(fc, numeric_columns):
+            num_fea_dict[fc.name] = features[fc.name]
+            if fc.normfun is not None:
+                 num_fea_dict[fc.name] = fc.normfun(features[fc.name])
             
-    return fea_dict
+    return dnn_ fea_dict, num_fea_dict
     
 
 
