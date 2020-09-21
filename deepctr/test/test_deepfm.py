@@ -13,8 +13,9 @@ from sklearn.ensemble import GradientBoostingRegressor
 import pandas as pd 
 import os
 from deepctr.features.feature_utils import gen_movielens_feas,make_featurecolumn
+from deepctr.features.feature_columns import conf_to_featurecolumns
 from deepctr.models.deepfm import DeepFm
-feature_columns = make_featurecolumn('conf/deepfm.conf', 'conf/deepfm.fc')
+feature_columns = conf_to_featurecolumns('conf/deepfm/')
 data = gen_movielens_feas("data/ml-100k")
 Features,labels = data,data.pop('rating')
 deepfm = DeepFm( feature_columns[0], feature_columns[1], [64,32,8], output_activation = None)

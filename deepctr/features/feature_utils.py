@@ -142,6 +142,6 @@ def gen_movielens_feas(dir_name):
     user_item_pd['user_id'] = user_item_pd['user_id'].astype(str)
     user_item_pd['item_id'] = user_item_pd['item_id'].astype(str)
     #print(user_item_pd.head())
-    #print(user_item_pd['zipcode'])
+    print(user_item_pd['zipcode'])
     user_item_pd = user_item_pd.drop(['vdreleasedate', 'imdburl','mvtitle','unknow'], axis=1)
     return user_item_pd
