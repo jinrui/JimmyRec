@@ -45,6 +45,7 @@ def build_feature_columns(feature_columns):
         if isinstance(fc, embedding_column): 
             input_dict[fc.name] = Input(
                 shape=(fc.max_len,), name=fc.name, dtype=fc.dtype)
+            print(fc.name, fc.dtype)
         if isinstance(fc, numeric_column): 
             input_dict[fc.name] = Input(
                 shape=(fc.num_len,), name=fc.name, dtype=fc.dtype)
@@ -63,11 +64,10 @@ def dict_from_feature_columns(features, feature_columns):
                                                         name=None)
             else:
                 idx = features[fc.name]
-            
             dnn_fea_dict[fc.name] = emb(idx)
         elif isinstance(fc, numeric_column):
             num_fea_dict[fc.name] = features[fc.name]
-            print('zeze', num_fea_dict[fc.name])
+           
             if fc.normfun is not None:
                  num_fea_dict[fc.name] = fc.normfun(features[fc.name])
             
@@ -97,7 +97,6 @@ def conf_to_featurecolumns(path):
                 num_len = int(fea_col['num_len'])
             col = numeric_column(name, num_len)
         if fea_class == 'embedding_column':
-            print(fea_col)
             col = embedding_column(name, vocabulary_size = int(fea_col['vocabulary_size'])\
                 , embedding_dim = int(fea_col['embedding_dim']), use_hash = fea_col['use_hash'] == 'true')
         feature_columns.append(col)

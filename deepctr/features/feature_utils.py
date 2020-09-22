@@ -20,7 +20,6 @@ def load_jimmysvm(file_name):
     column_name, X, Y = [], [],[]
     for line in open(file_name):
         feas = re.split(' |\\t', line.strip())
-        print(feas)
         if len(feas) < 2:
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to greater than 2 dimensions" % (len(feas)))
@@ -139,9 +138,8 @@ def gen_movielens_feas(dir_name):
     user_item_pd['releasedate']=user_item_pd['releasedate'].apply(string_toTimestamp)
     user_item_pd['mvtitle']=user_item_pd['mvtitle'].apply(handle_mvtitle)
     user_item_pd[['timestamp', 'age', 'releasedate']] = MinMaxScaler().fit_transform(user_item_pd[['timestamp', 'age', 'releasedate']])
-    user_item_pd['user_id'] = user_item_pd['user_id'].astype(str)
-    user_item_pd['item_id'] = user_item_pd['item_id'].astype(str)
+    #user_item_pd['user_id'] = user_item_pd['user_id'].astype(str)
+    #user_item_pd['item_id'] = user_item_pd['item_id'].astype(str)
     #print(user_item_pd.head())
-    print(user_item_pd['zipcode'])
     user_item_pd = user_item_pd.drop(['vdreleasedate', 'imdburl','mvtitle','unknow'], axis=1)
     return user_item_pd
