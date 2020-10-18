@@ -138,17 +138,27 @@ class LocalActivationUnit_layer(Layer):
         super(LocalActivationUnit_layer, self).__init__(**kwargs)
 
 #SimpleAttention_layer
-class SimpleAttention_layer(Layer):
-     def __init__(self, hidden_units, activation='relu', l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
-        self.hidden_units = hidden_units
+class DinAttention_layer(Layer):
+    def __init__(self, activation='sigmoid', l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
         self.activation = activation
         self.dropout_rate = dropout_rate
         self.seed = seed
         self.l2_reg = l2_reg
         self.use_bn = use_bn
-        super(SimpleAttention_layer, self).__init__(**kwargs)
+        super(DinAttention_layer, self).__init__(**kwargs)
 
+    def build(self, input_shape):
+        super(DinAttention_layer, self).build(
+            input_shape)  # Be sure to call this somewhere!
 
+    def call(self, x, training = False):
+        item, user_hist = x
+        all_hist = [[item, uh, us - item] for uh in user_hist]
+        all_hist = [tf.concat(ah, axis = -1) for ah in all_hist]
+        all_hist = tf.nn.softmax([Dense(1, self.activation)(ah) for ah in all_hist])
+        all_hist = [all_hist[i] * user_hist[i] for i in range(len(all_hist))]
+        all_hist = reduce(lambda x, y:x + y, all_hist)
+        return all_hist
 
 
 
