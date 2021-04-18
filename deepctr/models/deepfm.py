@@ -38,34 +38,3 @@ def DeepFm(dnn_feature_columns,line_feature_columns,dnn_hidden_units=None,
     myinputs = inputs_list.values()
     model = tf.keras.models.Model(inputs=myinputs, outputs=output)
     return model
-
-
-def DeepFm_v2(dnn_feature_columns,line_feature_columns,dnn_hidden_units=None,
-    dnn_activation_fn=tf.nn.relu,dnn_dropout=None,output_activation = tf.nn.sigmoid,
-    n_classes=1,batch_norm=False):
-    dnn_input_layer = tf.keras.layers.DenseFeatures(
-            feature_columns=dnn_feature_columns + line_feature_columns, name="dnn_input_layer")
-    fm_input_layer = tf.keras.layers.DenseFeatures(
-            feature_columns=dnn_feature_columns , name="fm_input_layer")
-    line_input_layer = tf.keras.layers.DenseFeatures(
-            feature_columns=line_feature_columns, name="line_input_layer")
-    inputs_list = build_input_layers(dnn_feature_columns + line_feature_columns)
-    
-
-    lr_logit = Dense(1)(line_input_layer(inputs_list)) #lr
-    dnn_input_fea = dnn_input_layer(inputs_list)
-    fm_input_fea = fm_input_layer(inputs_list)
-    fm_input_fea = tf.reshape(fm_input_fea, [-1, len(dnn_feature_columns), dnn_feature_columns[0].dimension])
-    fm_logit = Fm()(fm_input_fea) #fm
-    blocks = ks.models.Sequential(name='dynamic-blocks')
-    for hit in dnn_hidden_units:
-        blocks.add(Dense(hit))
-        blocks.add(Activation(dnn_activation_fn))
-        if  dnn_dropout is not None:
-            blocks.add(Dropout(dnn_dropout))
-    deep_logit = blocks(dnn_input_fea) #dnn
-    all_concat = tf.concat([lr_logit, fm_logit, deep_logit], axis=1)
-    output = Dense(n_classes, Activation(output_activation))(all_concat)
-    myinputs = inputs_list.values()
-    model = tf.keras.models.Model(inputs=myinputs, outputs=output)
-    return model

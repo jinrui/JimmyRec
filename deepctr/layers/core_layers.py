@@ -137,17 +137,39 @@ class LocalActivationUnit_layer(Layer):
         self.use_bn = use_bn
         super(LocalActivationUnit_layer, self).__init__(**kwargs)
 
-#SimpleAttention_layer
-class SimpleAttention_layer(Layer):
-     def __init__(self, hidden_units, activation='relu', l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
+#Attention_layer
+class Attention_layer(Layer):
+    def __init__(self, hidden_units,mode = 'dot' , activation='relu', l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
         self.hidden_units = hidden_units
         self.activation = activation
         self.dropout_rate = dropout_rate
         self.seed = seed
         self.l2_reg = l2_reg
         self.use_bn = use_bn
-        super(SimpleAttention_layer, self).__init__(**kwargs)
+        super(Attention_layer, self).__init__(**kwargs)
 
+    def build(self, input_shape):
+        self.fc = tf.keras.Sequential()
+        for unit in self.hidden_units:
+            self.fc.add(layers.Dense(unit, activation=self.activation, name="fc_att_"+str(unit))) 
+        self.fc.add(layers.Dense(1, activation='softmax', name="fc_att_out"))
+        super(Attention_layer, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, x, training = None):
+        query, keys, values = x
+        querys = tf.tile(query, mutiples = [1, tf.shape(keys)[1], 1])  #query扩展到和key一样的维度,方便后续计算
+        #query key 
+        if self.mode = 'dot':
+            att = tf.nn.softmax(tf.reduce_mean(querys * keys, axis = -1))
+            return tf.reduce_sum(att * values, axis = 1)
+        elif self.mode = 'din':
+            df1 = tf.concat([keys, keys - querys, querys], axis = -1)
+            att = self.fc(df1)
+            return tf.reduce_sum(att * values, axis = 1)
+
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
 
 
 
