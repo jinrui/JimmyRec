@@ -6,7 +6,9 @@ import tensorflow.keras as ks
 from tensorflow.keras.layers import Layer,Dense,Input, Embedding, LSTM,Bidirectional,Dropout,Activation,Convolution1D, Flatten, MaxPool1D, GlobalAveragePooling1D,BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras import backend as K
-from ..layers.core_layers import Fm
+from ..layers.core_layers import Attention_layer
+from ..layers.layer_utils import build_input_layers
+from ..features.feature_columns import build_feature_columns, dict_from_feature_columns
 
 #deep interest network. 利用attention机制找到和item最想相似的特征
 def Din(dnn_feature_columns,line_feature_columns,hist_feature_name,target_feature_name,dnn_hidden_units=None,
