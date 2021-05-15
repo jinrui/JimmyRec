@@ -19,7 +19,7 @@ feature_columns = conf_to_featurecolumns('conf/deepfm/')
 data = gen_movielens_feas("data/ml-100k")
 Features,labels = data,data.pop('rating')
 print(Features)
-deepfm = DeepFm( feature_columns[0], feature_columns[1], [64,32,8], output_activation = None)
+deepfm = DeepFm(feature_columns[0], feature_columns[1], [64,32,8], output_activation = None)
 deepfm.compile(optimizer=tf.keras.optimizers.Adam(0.0001), loss="mse", metrics=['mse'], )
 history = deepfm.fit(dict(Features), labels.values,
                      batch_size=128, epochs=30, verbose=2, validation_split=0.2, )
