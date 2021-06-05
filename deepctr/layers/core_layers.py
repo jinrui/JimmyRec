@@ -15,7 +15,7 @@ import os
 
 #DNN
 class DNN_layers(Layer):
-    def __init__(self, hidden_units, activations, l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
+    def __init__(self, hidden_units, activations = None, l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
         self.hidden_units = hidden_units
         self.activations = activations
         self.dropout_rate = dropout_rate
@@ -48,6 +48,8 @@ class DNN_layers(Layer):
             deep_out= K.bias_add(deep_out, self.bias[i], data_format='channels_last')
             if  self.activations[i] and self.activations[i] is not None :
                 deep_out= tf.keras.layers.Activation(self.activations[i])(deep_out)
+            else :
+                deep_out= tf.keras.layers.Activation('relu')(deep_out)
             #x= tf.keras.layers.Dropout(self.dropout_rate)(x, training = training)
         return deep_out
 
@@ -202,9 +204,9 @@ class MMOE_layer(Layer):
         for i in range(self.num_tasks):
             gates_out.append(tf.expand_dims(self.gates[i](x), axis = 1))
         experts_out = tf.concat(experts_out, axis = 2) #batch_size * d * num_experts
-        gates_out = tf.concat(gates_out, axis = 1) # batch_size * num_tasks * d
-        weights_out = tf.matmul(gates_out, experts_out) # batch_size * num_tasks * num_experts
-        weights_out = tf.matmul(weights_out, tf.transpose(experts_out, [0, 2, 1])) #batch_size * num_tasks * d
+        weights_out = []
+        for gate in gates_out: #gate: batch_size * 1 * num_experts
+            weights_out.append(tf.matmul(gate, tf.transpose(experts_out, [0, 2, 1]))) #batch_size * 1 * d
         return weights_out
 
         
