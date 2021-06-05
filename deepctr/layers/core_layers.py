@@ -173,7 +173,7 @@ class Attention_layer(Layer):
     def compute_output_shape(self, input_shape):
         return (input_shape[0], 1)
 
-    #Attention_layer
+    #MMOE_layer
 class MMOE_layer(Layer):
     def __init__(self, expert_hidden_units, gate_hidden_units,num_experts, num_tasks, activation = 'relu', seed=1024, **kwargs):
         self.experts = []
@@ -215,6 +215,34 @@ class MMOE_layer(Layer):
     def compute_output_shape(self, input_shape):
         return (input_shape[0], 1)
 
+    #MMOE_layer
+class DCN_layer(Layer):
+    def __init__(self, depth, activation = 'relu', seed=1024, **kwargs):
+        self.depth = depth
+        self.activation = activation
+        super(DCN_layer, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.weights = []
+        self.biass = []
+        for i in range(self.depth):
+            self.weights.append(self.add_weight(name='weight_' + str(i),  shape=(self.input_shape[-1] ,1), initializer='glorot_uniform',trainable=True)
+)           self.biass.append(self.add_weight(name='bias_' + str(i),  shape=self.input_shape[-1] ,1), initializer='glorot_uniform',trainable=True))
+
+        super(DCN_layer, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, x, training = None): # x: batch_size * 1 * d
+        x0 = tf.transpose(x, [0, 2, 1])   #batch_size * d * 1
+        xi = x #batch_size * 1 * d
+        for i in range(self.depth):
+            y = tf.matmul(x0, xi) # batch_size * d * d
+            y = tf.matmul(y, self.weights[i]) + self.biass[i] + x0 #batch_size * d * 1
+            xi = tf.transpose(y, [0, 2, 1])    #batch_size * 1 * d
+        return xi
+
+        
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
 
 
 
