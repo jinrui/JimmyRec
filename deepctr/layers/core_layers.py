@@ -158,20 +158,71 @@ class Attention_layer(Layer):
         super(Attention_layer, self).build(input_shape)  # Be sure to call this somewhere!
 
     def call(self, x, training = None):
-        query, keys, values = x
-        querys = tf.tile(query, mutiples = [1, tf.shape(keys)[1], 1])  #query扩展到和key一样的维度,方便后续计算
+        query, keys, values = x #(batch_size, 1, embedding_size), (batch_size, T, embedding_size)
+        querys = tf.tile(query, mutiples = [1, tf.shape(keys)[1], 1])  #query扩展到和key一样的维度,方便后续计算,(batch_size, T, embedding_size)
         #query key 
         if self.mode = 'dot':
-            att = tf.nn.softmax(tf.reduce_mean(querys * keys, axis = -1))
-            return tf.reduce_sum(att * values, axis = 1)
+            att = tf.nn.softmax(tf.reduce_mean(querys * keys, axis = -1 ,keepdims=True)) #(batch_size, T, 1)
+            return tf.reduce_sum(att * values, axis = 1) #(batch_size, embedding_size)
         elif self.mode = 'din':
-            df1 = tf.concat([keys, keys - querys, querys], axis = -1)
-            att = self.fc(df1)
-            return tf.reduce_sum(att * values, axis = 1)
+            df1 = tf.concat([keys, keys - querys, querys], axis = -1) #(batch_size, T, 3 * embedding_size)
+            att = self.fc(df1) #(batch_size, T, 1)
+            return tf.reduce_sum(att * values, axis = 1) #(batch_size, embedding_size)
 
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0], 1)
+        return (None, input_shape[0], input_shape[-1])
+
+#Attention_layer
+class Self_attention_layer(Layer):
+    def __init__(self,att_emb_size = 3, head_num = 1,activation='relu', use_res = True,l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
+        self.activation = activation
+        self.dropout_rate = dropout_rate
+        self.seed = seed
+        self.l2_reg = l2_reg
+        self.use_bn = use_bn
+        self.head_num = head_num
+        self.att_emb_size = att_emb_size
+        self.use_res = use_res
+        super(Self_attention_layer, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.weight_q = self.add_weights(name = 'query', shape = [input_shape[-1], self.att_emb_size * self.head_num],\
+            dtype=tf.float32, initializer=tf.keras.initializers.TruncatedNormal(seed=self.seed))
+        self.weight_k = self.add_weights(name = 'key', shape = [input_shape[-1], self.att_emb_size * self.head_num],\
+            dtype=tf.float32, initializer=tf.keras.initializers.TruncatedNormal(seed=self.seed))
+        self.weight_v = self.add_weights(name = 'value', shape = [input_shape[-1], self.att_emb_size * self.head_num],\
+            dtype=tf.float32, initializer=tf.keras.initializers.TruncatedNormal(seed=self.seed))
+        if self.use_res:
+            self.weight_res = self.add_weight(name='res', shape=[input_shape[-1], self.att_emb_size * self.head_num],
+                                         dtype=tf.float32,
+                                         initializer=tf.keras.initializers.TruncatedNormal(seed=self.seed))
+        super(Self_attention_layer, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, x, training = None):
+        querys = tf.tensordot(inputs, self.weight_q, axes=(-1, 0))  # batch_size * word_num * (att_emb_size * head_num) 
+        keys = tf.tensordot(inputs, self.weight_k, axes=(-1, 0))# batch_size * word_num * (att_emb_size * head_num) 
+        values = tf.tensordot(inputs, self.weight_v, axes=(-1, 0))# batch_size * word_num * (att_emb_size * head_num) 
+        
+        querys = tf.stack(tf.split(querys, self.head_num, axis=2)) #head_num * batch_size * word_num * att_emb_size
+        keys = tf.stack(tf.split(keys, self.head_num, axis=2)) #head_num * batch_size * word_num * att_emb_size
+        values = tf.stack(tf.split(values, self.head_num, axis=2)) #head_num * batch_size * word_num * att_emb_size
+        inner_product = tf.matmul(
+            querys, keys, transpose_b=True) # head_num * batch_size * word_num * word_num
+        soft_inner_product = tf.nn.softmax(inner_product) # head_num * batch_size * word_num * word_num
+        normalized_att_scores = softmax(inner_product) # head_num * batch_size * word_num * word_num
+        
+        result = tf.matmul(normalized_att_scores,
+                           values)  #head_num * batch_size * word_num * att_emb_size
+        result = tf.concat(tf.split(result, self.head_num, ), axis=-1) # batch_size * word_num * (att_emb_size * head_num)
+        if self.use_res:
+            result += tf.tensordot(inputs, self.weight_res, axes=(-1, 0))# batch_size * word_num * (att_emb_size * head_num)
+        result = tf.nn.relu(result) # batch_size * word_num * (att_emb_size * head_num)
+
+        return result
+    def compute_output_shape(self, input_shape):
+       return (None, input_shape[1], self.att_emb_size * self.head_num)
+
 
     #MMOE_layer
 class MMOE_layer(Layer):

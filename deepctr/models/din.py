@@ -20,12 +20,12 @@ def Din(dnn_feature_columns,line_feature_columns,hist_feature_name,target_featur
         query_feature_columns = []
         for fc in dnn_feature_columns:
                 if fc in hist_feature_name:
-                        key_feature_columns.append(fc)
+                        key_feature_columns.append(dnn_fea_dict[fc])
                 elif fc in target_feature_name:
-                        query_feature_columns.append(fc)
+                        query_feature_columns.append(dnn_fea_dict[fc])
         key_features = tf.concat(key_feature_columns, axis = -1)
         query_features = tf.concat(query_feature_columns, axis = -1)
-        att_feature = Attention_layer([128, 64, 1], 'din')(query_features, [key_features, key_features])
+        att_feature = Attention_layer([128, 64, 1], 'din')([query_features, key_features, key_features])
     #dnn_fea_dict 可能是多值特征,所以有一个reduce_mean
         dnn_fea_list = [tf.reduce_mean(fea, axis=1) for fea in dnn_fea_dict.values()]
         dnn_input_fea = tf.concat(dnn_fea_list + [att_feature] + num_fea_dict.values(), axis = -1)
