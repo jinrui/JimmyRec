@@ -161,10 +161,10 @@ class Attention_layer(Layer):
         query, keys, values = x #(batch_size, 1, embedding_size), (batch_size, T, embedding_size)
         querys = tf.tile(query, mutiples = [1, tf.shape(keys)[1], 1])  #query扩展到和key一样的维度,方便后续计算,(batch_size, T, embedding_size)
         #query key 
-        if self.mode = 'dot':
+        if self.mode == 'dot':
             att = tf.nn.softmax(tf.reduce_mean(querys * keys, axis = -1 ,keepdims=True)) #(batch_size, T, 1)
             return tf.reduce_sum(att * values, axis = 1) #(batch_size, embedding_size)
-        elif self.mode = 'din':
+        elif self.mode == 'din':
             df1 = tf.concat([keys, keys - querys, querys], axis = -1) #(batch_size, T, 3 * embedding_size)
             att = self.fc(df1) #(batch_size, T, 1)
             return tf.reduce_sum(att * values, axis = 1) #(batch_size, embedding_size)
