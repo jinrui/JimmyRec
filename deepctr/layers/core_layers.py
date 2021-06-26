@@ -148,6 +148,7 @@ class Attention_layer(Layer):
         self.seed = seed
         self.l2_reg = l2_reg
         self.use_bn = use_bn
+        self.mode = mode
         super(Attention_layer, self).__init__(**kwargs)
 
     def build(self, input_shape):
@@ -210,9 +211,8 @@ class Self_attention_layer(Layer):
         inner_product = tf.matmul(
             querys, keys, transpose_b=True) # head_num * batch_size * word_num * word_num
         soft_inner_product = tf.nn.softmax(inner_product) # head_num * batch_size * word_num * word_num
-        normalized_att_scores = softmax(inner_product) # head_num * batch_size * word_num * word_num
         
-        result = tf.matmul(normalized_att_scores,
+        result = tf.matmul(soft_inner_product,
                            values)  #head_num * batch_size * word_num * att_emb_size
         result = tf.concat(tf.split(result, self.head_num, ), axis=-1) # batch_size * word_num * (att_emb_size * head_num)
         if self.use_res:
